@@ -1,0 +1,35 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Database
+data/*.db
+
+# Logs
+logs/*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Reports and docs
+*.docx
+*.pdf
+
+# Node
+node_modules/
+package.json
+package-lock.json

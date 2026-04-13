@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}New Scan{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <h2 class="mb-4"><i class="fas fa-crosshairs text-success"></i> New Vulnerability Scan</h2>
+        <div class="card bg-dark border-secondary">
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="target_url" class="form-label">Target URL</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                            <input type="text" name="target_url" id="target_url" class="form-control bg-dark text-light border-secondary" placeholder="e.g. https://example.com" required>
+                        </div>
+                        <div class="form-text">Enter the full URL of the website to scan.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="scan_type" class="form-label">Scan Type</label>
+                        <select name="scan_type" id="scan_type" class="form-select bg-dark text-light border-secondary">
+                            <option value="full">Full Scan (Headers + Ports + SSL + Crawler)</option>
+                            <option value="headers">Security Headers Only</option>
+                            <option value="ports">Port Scan Only</option>
+                            <option value="ssl">SSL/TLS Analysis Only</option>
+                            <option value="crawl">Web Crawler Only</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 fw-bold">
+                        <i class="fas fa-play"></i> Start Scan
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary mt-3">
+            <div class="card-header border-secondary"><i class="fas fa-info-circle"></i> What Gets Scanned</div>
+            <div class="card-body small text-muted">
+                <div id="scan-info-full">
+                    <ul class="mb-0">
+                        <li><strong>Security Headers</strong> — CSP, HSTS, X-Frame-Options, X-XSS-Protection etc.</li>
+                        <li><strong>Port Scan</strong> — 25 common TCP ports (FTP, SSH, HTTP, MySQL, RDP etc.)</li>
+                        <li><strong>SSL/TLS</strong> — Certificate validity, expiry, protocol version, cipher strength</li>
+                        <li><strong>Web Crawler</strong> — Pages, forms, sensitive files, CSRF tokens, inline scripts</li>
+                    </ul>
+                </div>
+                <div id="scan-info-headers" style="display:none;">
+                    <ul class="mb-0">
+                        <li><strong>Strict-Transport-Security</strong> — Enforces HTTPS to prevent MITM attacks</li>
+                        <li><strong>Content-Security-Policy</strong> — Prevents XSS and data injection</li>
+                        <li><strong>X-Frame-Options</strong> — Prevents clickjacking via iframe embedding</li>
+                        <li><strong>X-Content-Type-Options</strong> — Prevents MIME-type sniffing</li>
+                        <li><strong>Referrer-Policy, Permissions-Policy</strong> — Controls browser features and referrer data</li>
+                        <li><strong>Cookie flags</strong> — Checks Secure, HttpOnly attributes</li>
+                    </ul>
+                </div>
+                <div id="scan-info-ports" style="display:none;">
+                    <ul class="mb-0">
+                        <li>Scans common service ports on the target host</li>
+                        <li>Identifies open services and potential attack surface</li>
+                        <li>Flags high-risk open ports with severity ratings</li>
+                        <li>Detects exposed databases, remote access, and mail services</li>
+                    </ul>
+                </div>
+                <div id="scan-info-ssl" style="display:none;">
+                    <ul class="mb-0">
+                        <li><strong>Certificate validity</strong> — Checks if cert is trusted and not expired</li>
+                        <li><strong>Expiry date</strong> — Days until certificate expires</li>
+                        <li><strong>Protocol version</strong> — Flags outdated SSLv3, TLS 1.0, TLS 1.1</li>
+                        <li><strong>Cipher strength</strong> — Checks encryption bit length</li>
+                        <li><strong>Issuer and SAN</strong> — Certificate authority and subject alternative names</li>
+                    </ul>
+                </div>
+                <div id="scan-info-crawl" style="display:none;">
+                    <ul class="mb-0">
+                        <li><strong>Page discovery</strong> — Crawls links to find all accessible pages</li>
+                        <li><strong>Form detection</strong> — Finds forms and checks for CSRF tokens</li>
+                        <li><strong>Sensitive files</strong> — Checks for .env, .git/config, wp-config.php, phpinfo etc.</li>
+                        <li><strong>Inline scripts</strong> — Detects inline JavaScript (XSS risk)</li>
+                        <li><strong>Insecure forms</strong> — Forms submitting over HTTP</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('scan_type').addEventListener('change', function() {
+        document.querySelectorAll('[id^="scan-info-"]').forEach(el => el.style.display = 'none');
+        document.getElementById('scan-info-' + this.value).style.display = 'block';
+    });
+</script>
+{% endblock %}

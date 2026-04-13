@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5 col-lg-4">
+        <div class="card bg-dark border-success">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-plus fa-3x text-success"></i>
+                    <h3 class="mt-2">Create Account</h3>
+                </div>
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" minlength="3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" minlength="8" required>
+                        <div class="form-text">Min 8 chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 fw-bold">
+                        <i class="fas fa-user-plus"></i> Register
+                    </button>
+                </form>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('auth.login') }}" class="text-success">Already have an account? Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

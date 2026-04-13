@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Scan #{{ scan.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-file-shield text-success"></i> Scan Report #{{ scan.id }}</h2>
+    <div>
+        <div class="btn-group me-2">
+            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-download"></i> Export</button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+                <li><a class="dropdown-item" href="{{ url_for('reports.export_scan', scan_id=scan.id, format_type='json') }}"><i class="fas fa-file-code"></i> JSON</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.export_scan', scan_id=scan.id, format_type='xml') }}"><i class="fas fa-file-code"></i> XML</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.export_scan', scan_id=scan.id, format_type='csv') }}"><i class="fas fa-file-csv"></i> CSV</a></li>
+            </ul>
+        </div>
+        <a href="{{ url_for('scans.list_scans') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+</div>
+
+<!-- Scan Summary -->
+<div class="row g-3 mb-4">
+    <div class="col-md-8">
+        <div class="card bg-dark border-{{ 'danger' if scan.risk_level == 'critical' else 'warning' if scan.risk_level == 'high' else 'info' if scan.risk_level == 'medium' else 'success' }}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1"><code>{{ scan.target_url }}</code></h5>
+                        <span class="badge bg-secondary">{{ scan.scan_type }} scan</span>
+                        <span class="badge bg-{{ 'success' if scan.status == 'completed' else 'primary' }}">{{ scan.status }}</span>
+                    </div>
+                    <div class="text-center">
+                        <h2 class="text-{{ 'danger' if scan.risk_level == 'critical' else 'warning' if scan.risk_level == 'high' else 'info' if scan.risk_level == 'medium' else 'success' }} mb-0">{{ scan.risk_level | upper }}</h2>
+                        <small class="text-muted">Risk Level</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-body p-0">
+                <table class="table table-dark mb-0">
+                    <tr><td class="text-muted">Vulnerabilities</td><td><span class="badge bg-info fs-6">{{ scan.total_vulnerabilities }}</span></td></tr>
+                    <tr><td class="text-muted">Scanned</td><td class="small">{{ scan.created_at.strftime('%Y-%m-%d %H:%M UTC') if scan.created_at else 'N/A' }}</td></tr>
+                    <tr><td class="text-muted">Completed</td><td class="small">{{ scan.completed_at.strftime('%Y-%m-%d %H:%M UTC') if scan.completed_at else 'N/A' }}</td></tr>
+                    <tr><td class="text-muted">Scanner</td><td>{{ scan.user.username if scan.user else 'N/A' }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Header Analysis Results -->
+{% if results.get('headers') and not results.headers.get('error') %}
+<div class="card bg-dark border-secondary mb-3">
+    <div class="card-header border-secondary">
+        <i class="fas fa-heading"></i> Security Headers
+        <span class="badge bg-{{ 'success' if results.headers.score >= 80 else 'warning text-dark' if results.headers.score >= 50 else 'danger' }} float-end">Score: {{ results.headers.score }}%</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-dark table-sm mb-0">
+            <thead><tr><th>Header</th><th>Status</th><th>Value</th></tr></thead>
+            <tbody>
+                {% for h in results.headers.get('headers_present', []) %}
+                <tr>
+                    <td>{{ h.name }}</td>
+                    <td><span class="badge bg-success">Present</span></td>
+                    <td class="small text-break" style="max-width:400px;">{{ h.value[:100] }}</td>
+                </tr>
+                {% endfor %}
+                {% for h in results.headers.get('headers_missing', []) %}
+                <tr>
+                    <td>{{ h.name }}</td>
+                    <td><span class="badge bg-{{ 'danger' if h.severity == 'high' else 'warning text-dark' if h.severity == 'medium' else 'secondary' }}">Missing</span></td>
+                    <td class="small text-muted">{{ h.recommendation }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Port Scan Results -->
+{% if results.get('ports') and not results.ports.get('error') %}
+<div class="card bg-dark border-secondary mb-3">
+    <div class="card-header border-secondary">
+        <i class="fas fa-network-wired"></i> Open Ports
+        <span class="badge bg-info float-end">{{ results.ports.open_ports | length }} open / {{ results.ports.total_scanned }} scanned</span>
+    </div>
+    <div class="card-body p-0">
+        {% if results.ports.open_ports %}
+        <table class="table table-dark table-sm mb-0">
+            <thead><tr><th>Port</th><th>Service</th><th>Severity</th><th>Description</th></tr></thead>
+            <tbody>
+                {% for p in results.ports.open_ports %}
+                <tr>
+                    <td><code>{{ p.port }}</code></td>
+                    <td>{{ p.service }}</td>
+                    <td><span class="badge bg-{{ 'danger' if p.severity == 'critical' else 'warning text-dark' if p.severity == 'high' else 'info' if p.severity == 'medium' else 'success' }}">{{ p.severity }}</span></td>
+                    <td class="small">{{ p.description }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3 text-muted text-center">No open ports found on common ports.</div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- SSL Results -->
+{% if results.get('ssl') and not results.ssl.get('error') %}
+<div class="card bg-dark border-secondary mb-3">
+    <div class="card-header border-secondary">
+        <i class="fas fa-lock"></i> SSL/TLS Analysis
+        {% if results.ssl.get('cert_valid') %}
+        <span class="badge bg-success float-end">Valid Certificate</span>
+        {% else %}
+        <span class="badge bg-danger float-end">Invalid Certificate</span>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-dark table-sm mb-0">
+            {% if results.ssl.get('certificate') %}
+            <tr><td class="text-muted" style="width:200px;">Common Name</td><td>{{ results.ssl.certificate.get('common_name', 'N/A') }}</td></tr>
+            <tr><td class="text-muted">Issuer</td><td>{{ results.ssl.certificate.get('issuer', 'N/A') }}</td></tr>
+            <tr><td class="text-muted">Valid Until</td><td>{{ results.ssl.certificate.get('not_after', 'N/A') }}</td></tr>
+            <tr><td class="text-muted">Days Until Expiry</td><td>{{ results.ssl.certificate.get('days_until_expiry', 'N/A') }}</td></tr>
+            {% endif %}
+            {% if results.ssl.get('protocol') %}
+            <tr><td class="text-muted">Protocol</td><td>{{ results.ssl.protocol }}</td></tr>
+            {% endif %}
+            {% if results.ssl.get('cipher') %}
+            <tr><td class="text-muted">Cipher</td><td>{{ results.ssl.cipher.name }} ({{ results.ssl.cipher.bits }} bits)</td></tr>
+            {% endif %}
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Crawler Results -->
+{% if results.get('crawler') and not results.crawler.get('error') %}
+<div class="card bg-dark border-secondary mb-3">
+    <div class="card-header border-secondary">
+        <i class="fas fa-spider"></i> Web Crawler Results
+        <span class="badge bg-info float-end">{{ results.crawler.total_pages }} pages crawled</span>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <h6 class="text-success">Forms Found: {{ results.crawler.forms_found | length }}</h6>
+                {% for form in results.crawler.get('forms_found', [])[:5] %}
+                <div class="small mb-1">
+                    <span class="badge bg-secondary">{{ form.method }}</span>
+                    <code>{{ form.action[:50] }}</code>
+                    <span class="text-muted">({{ form.inputs | length }} fields)</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="col-md-4">
+                <h6 class="text-success">Sensitive Files: {{ results.crawler.sensitive_files | length }}</h6>
+                {% for sf in results.crawler.get('sensitive_files', []) %}
+                <div class="small mb-1">
+                    <span class="badge bg-warning text-dark">Exposed</span>
+                    <code>{{ sf.path }}</code>
+                </div>
+                {% endfor %}
+                {% if not results.crawler.sensitive_files %}
+                <div class="small text-muted">None found.</div>
+                {% endif %}
+            </div>
+            <div class="col-md-4">
+                <h6 class="text-success">External Links: {{ results.crawler.external_links | length }}</h6>
+                {% for link in results.crawler.get('external_links', [])[:5] %}
+                <div class="small mb-1 text-break"><code>{{ link.url[:50] }}</code></div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- All Vulnerabilities -->
+<div class="card bg-dark border-secondary mb-3">
+    <div class="card-header border-secondary">
+        <i class="fas fa-bug"></i> All Vulnerabilities ({{ vulnerabilities | length }})
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm mb-0">
+                <thead><tr><th>Severity</th><th>Category</th><th>Name</th><th>Description</th><th>Recommendation</th></tr></thead>
+                <tbody>
+                    {% for v in vulnerabilities %}
+                    <tr>
+                        <td><span class="badge bg-{{ 'danger' if v.severity == 'critical' else 'warning text-dark' if v.severity == 'high' else 'info' if v.severity == 'medium' else 'success' if v.severity == 'low' else 'secondary' }}">{{ v.severity }}</span></td>
+                        <td><span class="badge bg-dark border border-secondary">{{ v.category }}</span></td>
+                        <td class="fw-bold">{{ v.name }}</td>
+                        <td class="small">{{ v.description[:150] }}</td>
+                        <td class="small text-muted">{{ v.recommendation[:150] }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not vulnerabilities %}
+                    <tr><td colspan="5" class="text-center text-muted py-3">No vulnerabilities found.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Delete -->
+<div class="card bg-dark border-danger">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('scans.delete_scan', scan_id=scan.id) }}" onsubmit="return confirm('Delete this scan?');" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i> Delete Scan</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
